@@ -1,0 +1,68 @@
+﻿{% macro item_card(item) -%}
+<article class="item-card">
+    <a class="item-cover" href="{{ url_for('market.detail', item_id=item.id) }}">
+        {% if item.cover %}
+        <img src="{{ url_for('static', filename='uploads/items/' ~ item.cover) }}"
+             alt="{{ item.title }}" loading="lazy">
+        {% else %}
+        <img src="{{ url_for('static', filename='img/placeholder.svg') }}" alt="暂无图片">
+        {% endif %}
+        <span class="status-pill status-{{ item.status | status_class }}">{{ item.status }}</span>
+        <span class="cover-cat">{{ item.category.icon }} {{ item.category.name }}</span>
+    </a>
+    <div class="item-body">
+        <h3 class="item-title">
+            <a href="{{ url_for('market.detail', item_id=item.id) }}">{{ item.title }}</a>
+        </h3>
+        <div class="item-meta">
+            <span class="price">¥ {{ item.price | price }}</span>
+            <span class="condition">{{ item.condition }}</span>
+        </div>
+        <div class="item-foot">
+            <span class="seller">
+                <span class="avatar avatar-sm">{{ item.seller.username | avatar }}</span>
+                {{ item.seller.username }}
+            </span>
+            <span class="text-muted small">
+                {{ item.campus or '校区待定' }} · {{ item.created_at | timeago }}
+            </span>
+        </div>
+    </div>
+</article>
+{%- endmacro %}
+
+
+{% macro render_pagination(pager) -%}
+{% if pager.pages > 1 %}
+<nav class="mt-4" aria-label="分页">
+    <ul class="pagination justify-content-center flex-wrap gap-1">
+        <li class="page-item {{ 'disabled' if not pager.has_prev }}">
+            <a class="page-link" href="{{ page_url(pager.prev_num) if pager.has_prev else '#' }}"
+               aria-label="上一页">&laquo;</a>
+        </li>
+        {% for p in pager.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
+            {% if p %}
+                <li class="page-item {{ 'active' if p == pager.page }}">
+                    <a class="page-link" href="{{ page_url(p) }}">{{ p }}</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">…</span></li>
+            {% endif %}
+        {% endfor %}
+        <li class="page-item {{ 'disabled' if not pager.has_next }}">
+            <a class="page-link" href="{{ page_url(pager.next_num) if pager.has_next else '#' }}"
+               aria-label="下一页">&raquo;</a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+{%- endmacro %}
+
+
+{% macro field_errors(errors) -%}
+{% if errors %}
+<div class="alert alert-danger py-2 px-3 small mb-3">
+    {% for error in errors %}<div>{{ error }}</div>{% endfor %}
+</div>
+{% endif %}
+{%- endmacro %}

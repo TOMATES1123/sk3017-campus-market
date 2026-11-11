@@ -1,0 +1,65 @@
+﻿{% extends "base.html" %}
+{% from "macros/ui.html" import render_pagination with context %}
+
+{% block title %}收到的留言 · 校园集市{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row g-4 mt-2">
+        <div class="col-lg-3">
+            {% include "user/_menu.html" %}
+        </div>
+
+        <div class="col-lg-9">
+            <div class="panel">
+                <h1 class="panel-title mb-1">收到的留言</h1>
+                <p class="panel-sub">共 {{ pagination.total }} 条，及时回复能提高成交率。</p>
+
+                {% if pagination.items %}
+                    {% for message in pagination.items %}
+                    <div class="message-item">
+                        <span class="avatar">{{ message.author.username | avatar }}</span>
+                        <div class="message-body">
+                            <div class="message-head">
+                                <span class="message-author">{{ message.author.username }}</span>
+                                <span class="message-time">留言于 {{ message.created_at | timeago }}</span>
+                                <a class="small ms-auto"
+                                   href="{{ url_for('market.detail', item_id=message.item_id) }}#messages">
+                                    来自：{{ message.item.title | truncate(18) }} →
+                                </a>
+                            </div>
+                            <p class="message-text">{{ message.content }}</p>
+
+                            {% if message.replies %}
+                            <div class="reply-list">
+                                {% for reply in message.replies %}
+                                <div class="reply-item">
+                                    <span class="who">我的回复</span>：{{ reply.content }}
+                                    <span class="message-time ms-1">{{ reply.created_at | timeago }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <form class="d-flex gap-2 mt-2" method="post"
+                                  action="{{ url_for('market.reply_message', message_id=message.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input class="form-control form-control-sm" name="content" maxlength="500"
+                                       required placeholder="回复买家…">
+                                <button class="btn btn-sm btn-brand text-nowrap" type="submit">回复</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {{ render_pagination(pagination) }}
+                {% else %}
+                    <div class="empty-state">
+                        <span class="emoji">💬</span>
+                        <p class="mb-0">还没有收到留言，商品描述写详细些更容易有人来问。</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

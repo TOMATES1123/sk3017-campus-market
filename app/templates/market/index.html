@@ -1,0 +1,80 @@
+﻿{% extends "base.html" %}
+{% from "macros/ui.html" import item_card, render_pagination with context %}
+
+{% block title %}闲置市场 · 校园集市{% endblock %}
+
+{% block content %}
+<div class="container">
+    <section class="hero mt-4">
+        <span class="hero-eyebrow">Campus Market · 2026</span>
+        <h1>让闲置流动起来</h1>
+        <p>
+            教材、数码、生活用品、运动装备……同校同学之间当面交易，省钱又省心。
+            发布你的闲置，或者淘一件刚好需要的东西。
+        </p>
+        <form class="hero-search" action="{{ url_for('market.index') }}" method="get" role="search">
+            {% if slug %}<input type="hidden" name="category" value="{{ slug }}">{% endif %}
+            <input type="search" name="q" maxlength="40" value="{{ keyword }}"
+                   placeholder="试试搜「高数」「iPad」「自行车」…" aria-label="搜索商品">
+            <button class="btn btn-accent" type="submit">搜索</button>
+        </form>
+        <div class="hero-stats">
+            <div><strong>{{ total_on_sale }}</strong><span>件在售闲置</span></div>
+            <div><strong>{{ categories | length }}</strong><span>个商品分类</span></div>
+            <div><strong>{{ today_new }}</strong><span>今日上新</span></div>
+        </div>
+    </section>
+
+    <div class="filter-bar">
+        <a class="chip {{ 'active' if not slug }}"
+           href="{{ url_for('market.index', q=keyword or None, sort=sort) }}">
+            全部 <span class="count">{{ total_on_sale }}</span>
+        </a>
+        {% for category in categories %}
+        <a class="chip {{ 'active' if slug == category.slug }}"
+           href="{{ url_for('market.index', category=category.slug, q=keyword or None, sort=sort) }}">
+            {{ category.icon }} {{ category.name }}
+            <span class="count">{{ category_counts[category.id] }}</span>
+        </a>
+        {% endfor %}
+        <div class="sort-links">
+            {% for key, label in sort_options.items() %}
+            <a class="{{ 'active' if sort == key }}"
+               href="{{ url_for('market.index', q=keyword or None, category=slug or None, sort=key) }}">
+                {{ label }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="result-line">
+        <div>
+            {% if keyword %}
+                「<strong>{{ keyword }}</strong>」的搜索结果
+            {% elif active_category %}
+                {{ active_category.icon }} <strong>{{ active_category.name }}</strong>
+            {% else %}
+                最新发布
+            {% endif %}
+            共 {{ pagination.total }} 件
+        </div>
+        <div>第 {{ pagination.page }} / {{ pagination.pages or 1 }} 页</div>
+    </div>
+
+    {% if pagination.items %}
+    <div class="item-grid">
+        {% for item in pagination.items %}{{ item_card(item) }}{% endfor %}
+    </div>
+    {{ render_pagination(pagination) }}
+    {% else %}
+    <div class="empty-state">
+        <span class="emoji">🛒</span>
+        <h2 class="h5 mb-2">没有找到相关闲置</h2>
+        <p class="mb-3">
+            {% if keyword %}换个关键词试试，或者看看其他分类。{% else %}这个分类还空着，来当第一个发布的人吧。{% endif %}
+        </p>
+        <a class="btn btn-brand" href="{{ url_for('market.index') }}">查看全部商品</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

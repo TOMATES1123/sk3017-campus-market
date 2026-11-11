@@ -1,0 +1,34 @@
+﻿{% extends "base.html" %}
+{% from "macros/ui.html" import item_card, render_pagination with context %}
+
+{% block title %}我的收藏 · 校园集市{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row g-4 mt-2">
+        <div class="col-lg-3">
+            {% include "user/_menu.html" %}
+        </div>
+
+        <div class="col-lg-9">
+            <div class="panel mb-3">
+                <h1 class="panel-title mb-1">我的收藏</h1>
+                <p class="panel-sub mb-0">共收藏 {{ pagination.total }} 件商品，下手前记得再看看成色和留言。</p>
+            </div>
+
+            {% if pagination.items %}
+            <div class="item-grid">
+                {% for item in pagination.items %}{{ item_card(item) }}{% endfor %}
+            </div>
+            {{ render_pagination(pagination) }}
+            {% else %}
+            <div class="empty-state">
+                <span class="emoji">❤️</span>
+                <p class="mb-3">还没有收藏任何商品，去市场逛逛吧。</p>
+                <a class="btn btn-brand" href="{{ url_for('market.index') }}">去逛逛</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

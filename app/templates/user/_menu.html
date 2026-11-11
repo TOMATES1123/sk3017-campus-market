@@ -1,0 +1,22 @@
+{% set menu = [
+    ('user.center', '个人主页', '🏠'),
+    ('user.my_items', '我发布的', '📦'),
+    ('user.my_favorites', '我的收藏', '❤️'),
+    ('user.my_messages', '收到的留言', '💬'),
+    ('user.profile', '账号设置', '⚙️')
+] %}
+<div class="list-group side-menu">
+    <div class="d-flex align-items-center gap-2 px-2 pb-3">
+        <span class="avatar avatar-lg">{{ current_user.username | avatar }}</span>
+        <div class="min-w-0">
+            <div class="fw-semibold text-truncate">{{ current_user.username }}</div>
+            <div class="small text-muted text-truncate">{{ current_user.campus or '未填写校区' }}</div>
+        </div>
+    </div>
+    {% for endpoint, label, icon in menu %}
+    <a class="list-group-item {{ 'active' if request.endpoint == endpoint }}"
+       href="{{ url_for(endpoint) }}">
+        <span class="me-1">{{ icon }}</span>{{ label }}
+    </a>
+    {% endfor %}
+</div>

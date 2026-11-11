@@ -1,0 +1,206 @@
+﻿{% extends "base.html" %}
+{% from "macros/ui.html" import item_card with context %}
+
+{% block title %}{{ item.title }} · 校园集市{% endblock %}
+
+{% block content %}
+<div class="container">
+    <nav class="breadcrumb-bar">
+        <a href="{{ url_for('market.index') }}">闲置市场</a>
+        <span class="mx-1">/</span>
+        <a href="{{ url_for('market.index', category=item.category.slug) }}">
+            {{ item.category.icon }} {{ item.category.name }}
+        </a>
+        <span class="mx-1">/</span>
+        <span>{{ item.title }}</span>
+    </nav>
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="gallery-main">
+                {% set first = item.images[0].filename if item.images else '' %}
+                <img id="galleryMain"
+                     src="{{ url_for('static', filename='uploads/items/' ~ first) if first else url_for('static', filename='img/placeholder.svg') }}"
+                     alt="{{ item.title }}">
+            </div>
+            {% if item.images | length > 1 %}
+            <div class="gallery-thumbs">
+                {% for image in item.images %}
+                <button type="button" class="{{ 'active' if loop.first }}"
+                        data-gallery-thumb="{{ url_for('static', filename='uploads/items/' ~ image.filename) }}"
+                        aria-label="查看第 {{ loop.index }} 张图片">
+                    <img src="{{ url_for('static', filename='uploads/items/' ~ image.filename) }}"
+                         alt="{{ item.title }} 图片 {{ loop.index }}">
+                </button>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="panel mt-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="panel-title mb-0">商品描述</h2>
+                    <span class="text-muted small">浏览 {{ item.views }} 次</span>
+                </div>
+                <p class="detail-desc mb-0">{{ item.description }}</p>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="panel">
+                <div class="d-flex align-items-start justify-content-between gap-3">
+                    <h1 class="detail-title mb-0">{{ item.title }}</h1>
+                    <span class="badge rounded-pill bg-{{ item.status | status_class }} align-self-start">
+                        {{ item.status }}
+                    </span>
+                </div>
+
+                <div class="detail-price mt-3">
+                    ¥ {{ item.price | price }}
+                    <small>可小刀 · 当面交易</small>
+                </div>
+
+                <div class="detail-facts">
+                    <span class="fact">成色：{{ item.condition }}</span>
+                    <span class="fact">{{ item.category.icon }} {{ item.category.name }}</span>
+                    <span class="fact">📍 {{ item.campus or '校区待定' }}</span>
+                    <span class="fact">❤ {{ item.favorite_count }} 人收藏</span>
+                </div>
+
+                <div class="seller-box">
+                    <span class="avatar avatar-lg">{{ item.seller.username | avatar }}</span>
+                    <div class="flex-grow-1 min-w-0">
+                        <div class="d-flex align-items-center gap-2">
+                            <a class="fw-semibold"
+                               href="{{ url_for('user.public_profile', username=item.seller.username) }}">
+                                {{ item.seller.username }}
+                            </a>
+                            <span class="badge bg-light text-secondary">卖家</span>
+                        </div>
+                        <div class="small text-muted">
+                            {{ item.seller.campus or '校区未填写' }}
+                            {% if item.seller.phone %} · 电话 {{ item.seller.phone }}{% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-row">
+                    {% if is_owner %}
+                    <a class="btn btn-brand" href="{{ url_for('market.edit_item', item_id=item.id) }}">编辑商品</a>
+                    <form method="post" action="{{ url_for('market.update_status', item_id=item.id) }}"
+                          class="d-flex gap-2">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <select class="form-select form-select-sm" name="status" style="width: 110px"
+                                aria-label="修改状态">
+                            {% for status in ['在售', '已售', '下架'] %}
+                            <option value="{{ status }}" {{ 'selected' if item.status == status }}>{{ status }}</option>
+                            {% endfor %}
+                        </select>
+                        <button class="btn btn-outline-brand btn-sm" type="submit">保存状态</button>
+                    </form>
+                    <form method="post" action="{{ url_for('market.delete_item', item_id=item.id) }}"
+                          data-confirm="删除后无法恢复，确定删除「{{ item.title }}」吗？">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button class="btn btn-outline-danger btn-sm" type="submit">删除</button>
+                    </form>
+                    {% else %}
+                    <button class="btn btn-brand fav-btn {{ 'favorited' if favorited }}"
+                            data-favorite-url="{{ url_for('market.toggle_favorite', item_id=item.id) }}">
+                        <span data-fav-icon>{{ '♥' if favorited else '♡' }}</span>
+                        <span data-fav-label>{{ '已收藏' if favorited else '收藏' }}</span>
+                        <span class="opacity-75">({{ item.favorite_count }})</span>
+                    </button>
+                    <a class="btn btn-outline-brand" href="#messages">留言咨询</a>
+                    {% endif %}
+                </div>
+                <div class="small text-muted mt-3">
+                    发布于 {{ item.created_at.strftime('%Y-%m-%d %H:%M') }} ·
+                    最近更新 {{ item.updated_at | timeago }}
+                </div>
+            </div>
+
+            {% if similar %}
+            <div class="panel mt-4">
+                <h2 class="panel-title mb-3">同类推荐</h2>
+                <div class="d-grid gap-2">
+                    {% for other in similar %}
+                    <a class="list-row text-reset" href="{{ url_for('market.detail', item_id=other.id) }}">
+                        <img class="thumb"
+                             src="{{ url_for('static', filename='uploads/items/' ~ other.cover) if other.cover else url_for('static', filename='img/placeholder.svg') }}"
+                             alt="{{ other.title }}">
+                        <div class="flex-grow-1 min-w-0">
+                            <div class="text-truncate fw-semibold small">{{ other.title }}</div>
+                            <div class="small text-muted">{{ other.campus }} · {{ other.created_at | timeago }}</div>
+                        </div>
+                        <div class="price small">¥ {{ other.price | price }}</div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="panel mt-4" id="messages">
+        <div class="d-flex justify-content-between align-items-baseline mb-3">
+            <h2 class="panel-title mb-0">留言（{{ messages | length }}）</h2>
+            <span class="text-muted small">交易前多问问，避免踩坑</span>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+            <div class="message-item">
+                <span class="avatar">{{ message.author.username | avatar }}</span>
+                <div class="message-body">
+                    <div class="message-head">
+                        <span class="message-author">{{ message.author.username }}</span>
+                        <span class="message-time">{{ message.created_at | timeago }}</span>
+                    </div>
+                    <p class="message-text">{{ message.content }}</p>
+
+                    {% if message.replies %}
+                    <div class="reply-list">
+                        {% for reply in message.replies %}
+                        <div class="reply-item">
+                            <span class="who">{{ reply.author.username }}（卖家）</span>：{{ reply.content }}
+                            <span class="message-time ms-1">{{ reply.created_at | timeago }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    {% if is_owner %}
+                    <form class="d-flex gap-2 mt-2" method="post"
+                          action="{{ url_for('market.reply_message', message_id=message.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input class="form-control form-control-sm" name="content" maxlength="500"
+                               placeholder="回复 {{ message.author.username }}…" required>
+                        <button class="btn btn-sm btn-brand text-nowrap" type="submit">回复</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="text-muted mb-3">还没有留言，来问第一个问题吧。</p>
+        {% endif %}
+
+        {% if current_user and not is_owner %}
+        <form method="post" action="{{ url_for('market.post_message', item_id=item.id) }}" class="mt-3">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label class="form-label" for="messageContent">我要留言</label>
+            <textarea class="form-control" id="messageContent" name="content" rows="3"
+                      maxlength="500" required placeholder="例如：还在吗？可以便宜一点吗？"></textarea>
+            <div class="d-flex justify-content-between align-items-center mt-2">
+                <span class="form-text">请文明交流，不要在留言中暴露个人隐私。</span>
+                <button class="btn btn-brand" type="submit">发布留言</button>
+            </div>
+        </form>
+        {% elif not current_user %}
+        <div class="alert alert-light border mt-3 mb-0">
+            <a href="{{ url_for('auth.login', next=url_for('market.detail', item_id=item.id)) }}">登录</a>
+            后可以收藏商品、给卖家留言。
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

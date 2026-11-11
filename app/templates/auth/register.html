@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}注册 · 校园集市{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 760px">
+    <div class="panel mt-4">
+        <h1 class="panel-title">注册校园集市账号</h1>
+        <p class="panel-sub">注册后即可发布闲置、收藏商品、给卖家留言。</p>
+
+        <form method="post" action="{{ url_for('auth.register') }}" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label" for="username">用户名 <span class="text-danger">*</span></label>
+                    <input class="form-control" id="username" name="username" required maxlength="20"
+                           value="{{ form.get('username', '') }}" placeholder="2~20 位中文/字母/数字/下划线">
+                    <div class="form-text">登录时使用，注册后不可修改。</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="email">邮箱 <span class="text-danger">*</span></label>
+                    <input class="form-control" id="email" name="email" type="email" required maxlength="120"
+                           value="{{ form.get('email', '') }}" placeholder="name@example.com">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="password">密码 <span class="text-danger">*</span></label>
+                    <input class="form-control" id="password" name="password" type="password"
+                           required minlength="6" maxlength="32" placeholder="6~32 位">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="confirm">确认密码 <span class="text-danger">*</span></label>
+                    <input class="form-control" id="confirm" name="confirm" type="password"
+                           required minlength="6" maxlength="32" placeholder="再输入一次密码">
+                </div>
+                <div class="col-12">
+                    <label class="form-label" for="campus">所在校区</label>
+                    <input class="form-control" id="campus" name="campus" maxlength="64"
+                           value="{{ form.get('campus', '') }}" placeholder="例如：东校区">
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center gap-3 mt-4">
+                <button class="btn btn-brand px-4" type="submit">创建账号</button>
+                <span class="small text-muted">
+                    已有账号？<a href="{{ url_for('auth.login') }}">去登录</a>
+                </span>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

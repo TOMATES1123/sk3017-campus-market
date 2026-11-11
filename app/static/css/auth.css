@@ -1,0 +1,52 @@
+/* 登录页左侧品牌区 */
+.auth-side {
+    background:
+        radial-gradient(600px 280px at 85% 0%, rgba(255, 255, 255, .22), transparent 60%),
+        linear-gradient(150deg, #4338ca 0%, #4f46e5 55%, #7c3aed 100%);
+    color: #fff;
+    border-radius: var(--radius);
+    padding: 40px 34px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.auth-side::after {
+    content: "";
+    position: absolute;
+    right: -70px;
+    bottom: -70px;
+    width: 240px;
+    height: 240px;
+    border-radius: 50%;
+    border: 32px solid rgba(255, 255, 255, .08);
+}
+
+.auth-side h2 {
+    font-size: 30px;
+    font-weight: 800;
+    line-height: 1.35;
+    letter-spacing: -.5px;
+}
+
+.auth-side p { color: rgba(255, 255, 255, .8); }
+.auth-side .hero-eyebrow { background: rgba(255, 255, 255, .16); }
+
+.auth-points {
+    list-style: none;
+    padding: 0;
+    margin: 18px 0 0;
+    display: grid;
+    gap: 10px;
+    font-size: 14px;
+    color: rgba(255, 255, 255, .9);
+}
+
+.auth-points li::before {
+    content: "✓";
+    margin-right: 8px;
+    color: #fbbf24;
+    font-weight: 700;
+}

@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}{{ '编辑商品' if item else '发布闲置' }} · 校园集市{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 1080px">
+    <nav class="breadcrumb-bar">
+        <a href="{{ url_for('market.index') }}">闲置市场</a>
+        <span class="mx-1">/</span>
+        <span>{{ '编辑商品' if item else '发布闲置' }}</span>
+    </nav>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="panel">
+                <h1 class="panel-title">{{ '编辑商品信息' if item else '发布一件闲置' }}</h1>
+                <p class="panel-sub">
+                    {% if item %}
+                        修改后立即生效，商品图片最多 3 张。
+                    {% else %}
+                        信息写清楚一点，更容易被同学看中。带 <span class="text-danger">*</span> 为必填项。
+                    {% endif %}
+                </p>
+
+                <form method="post" enctype="multipart/form-data" novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="mb-3">
+                        <label class="form-label" for="title">商品标题 <span class="text-danger">*</span></label>
+                        <input class="form-control" id="title" name="title" maxlength="80" required
+                               value="{{ form.get('title', '') }}"
+                               placeholder="例如：高等数学（第七版）上下册，九成新">
+                        <div class="form-text">4~80 个字，写清品牌、型号、成色更容易成交。</div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-6">
+                            <label class="form-label" for="category_id">商品分类 <span class="text-danger">*</span></label>
+                            <select class="form-select" id="category_id" name="category_id" required>
+                                <option value="">请选择分类</option>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}"
+                                        {{ 'selected' if form.get('category_id') | string == category.id | string }}>
+                                    {{ category.icon }} {{ category.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label" for="price">价格（元）<span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">¥</span>
+                                <input class="form-control" id="price" name="price" type="number"
+                                       min="0.01" max="99999.99" step="0.01" required
+                                       value="{{ form.get('price', '') }}" placeholder="0.00">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-6">
+                            <label class="form-label" for="condition">成色 <span class="text-danger">*</span></label>
+                            <select class="form-select" id="condition" name="condition" required>
+                                {% set selected_condition = form.get('condition') or '九成新' %}
+                                {% for condition in conditions %}
+                                <option value="{{ condition }}"
+                                        {{ 'selected' if selected_condition == condition }}>
+                                    {{ condition }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label" for="campus">交易校区</label>
+                            <input class="form-control" id="campus" name="campus" maxlength="64"
+                                   value="{{ form.get('campus', current_user.campus or '') }}"
+                                   placeholder="例如：东校区 / 图书馆门口">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="description">商品描述 <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="description" name="description" rows="6"
+                                  maxlength="1000" required data-counter="#descCounter"
+                                  placeholder="购买时间、使用情况、有无瑕疵、交易方式……">{{ form.get('description', '') }}</textarea>
+                        <div class="d-flex justify-content-between form-text">
+                            <span>10~1000 个字，建议说明瑕疵，减少沟通成本。</span>
+                            <span><span id="descCounter">0</span> / 1000</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label">商品图片 <span class="text-danger">*</span></label>
+                        <div class="form-text mb-2">
+                            支持 jpg / jpeg / png，单张不超过 2MB，最多 3 张；第一张会作为封面。
+                        </div>
+
+                        {% if item and item.images %}
+                        <div class="upload-grid mb-3">
+                            {% for image in item.images %}
+                            <div class="existing-image">
+                                <img src="{{ url_for('static', filename='uploads/items/' ~ image.filename) }}"
+                                     alt="已有图片 {{ loop.index }}">
+                                <label class="keep-toggle">
+                                    <input class="form-check-input mt-0" type="checkbox" name="keep_image"
+                                           value="{{ image.id }}" checked data-keep-toggle>
+                                    保留
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <div class="upload-grid">
+                            {% for index in range(3) %}
+                            <label class="upload-slot" data-upload-slot>
+                                <input type="file" name="images" accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                                       aria-label="上传第 {{ index + 1 }} 张图片">
+                                <span class="slot-placeholder text-center">
+                                    <span class="plus">＋</span>
+                                    <span class="small d-block">
+                                        {{ '替换/追加图片' if item and item.images else '添加图片' }}
+                                    </span>
+                                </span>
+                                <img class="slot-preview" alt="图片预览" hidden>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-4">
+                        <button class="btn btn-brand px-4" type="submit">
+                            {{ '保存修改' if item else '立即发布' }}
+                        </button>
+                        <a class="btn btn-ghost"
+                           href="{{ url_for('market.detail', item_id=item.id) if item else url_for('market.index') }}">
+                            取消
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="panel">
+                <h2 class="panel-title">发布小贴士</h2>
+                <ol class="small text-muted ps-3 mb-4">
+                    <li class="mb-1">标题写清「品牌 + 型号 + 成色」，搜索时更容易被找到。</li>
+                    <li class="mb-1">实拍图比网图更可信，第一张尽量拍全貌。</li>
+                    <li class="mb-1">如实说明瑕疵，避免交易纠纷。</li>
+                    <li>约在人多的地方当面交易，先验货再付款。</li>
+                </ol>
+                <h2 class="panel-title">图片规范</h2>
+                <ul class="small text-muted ps-3 mb-0">
+                    <li>格式：jpg / jpeg / png</li>
+                    <li>大小：单张 ≤ 2MB</li>
+                    <li>数量：1~3 张</li>
+                    <li>尺寸：最短边 ≥ 160 像素</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

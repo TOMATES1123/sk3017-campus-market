@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}请求有误 · 校园集市{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="error-page">
+        <div class="error-code">400</div>
+        <h1 class="h4 mt-3">请求参数有误</h1>
+        <p class="text-muted">{{ message or '表单可能已过期，请返回上一页刷新后重试。' }}</p>
+        <div class="d-flex gap-2 justify-content-center">
+            <a class="btn btn-brand" href="{{ url_for('market.index') }}">回到首页</a>
+            <a class="btn btn-ghost" href="javascript:history.back()">返回上一页</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

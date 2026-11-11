@@ -1,0 +1,82 @@
+﻿{% extends "base.html" %}
+{% from "macros/ui.html" import render_pagination with context %}
+
+{% block title %}我发布的 · 校园集市{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row g-4 mt-2">
+        <div class="col-lg-3">
+            {% include "user/_menu.html" %}
+        </div>
+
+        <div class="col-lg-9">
+            <div class="panel">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                    <div>
+                        <h1 class="panel-title mb-0">我发布的商品</h1>
+                        <p class="panel-sub mb-0">共 {{ stats.items_total }} 件，其中在售 {{ stats.on_sale }} 件</p>
+                    </div>
+                    <a class="btn btn-brand" href="{{ url_for('market.create_item') }}">＋ 发布闲置</a>
+                </div>
+
+                <div class="d-flex gap-2 flex-wrap mb-3">
+                    <a class="chip {{ 'active' if not status }}"
+                       href="{{ url_for('user.my_items') }}">全部</a>
+                    {% for item_status in statuses %}
+                    <a class="chip {{ 'active' if status == item_status }}"
+                       href="{{ url_for('user.my_items', status=item_status) }}">{{ item_status }}</a>
+                    {% endfor %}
+                </div>
+
+                {% if pagination.items %}
+                    {% for item in pagination.items %}
+                    <div class="list-row flex-wrap">
+                        <img class="thumb"
+                             src="{{ url_for('static', filename='uploads/items/' ~ item.cover) if item.cover else url_for('static', filename='img/placeholder.svg') }}"
+                             alt="{{ item.title }}">
+                        <div class="flex-grow-1" style="min-width: 180px">
+                            <a class="fw-semibold text-reset"
+                               href="{{ url_for('market.detail', item_id=item.id) }}">{{ item.title }}</a>
+                            <div class="small text-muted">
+                                ¥ {{ item.price | price }} · {{ item.category.name }} ·
+                                {{ item.views }} 次浏览 · {{ item.created_at | timeago }}
+                            </div>
+                        </div>
+                        <span class="badge bg-{{ item.status | status_class }}">{{ item.status }}</span>
+                        <div class="d-flex gap-2">
+                            <a class="btn btn-sm btn-outline-brand"
+                               href="{{ url_for('market.edit_item', item_id=item.id) }}">编辑</a>
+                            <form method="post" action="{{ url_for('market.update_status', item_id=item.id) }}"
+                                  class="d-flex gap-2">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <select class="form-select form-select-sm" name="status"
+                                        style="width: 96px" aria-label="修改状态">
+                                    {% for item_status in statuses %}
+                                    <option value="{{ item_status }}"
+                                            {{ 'selected' if item.status == item_status }}>{{ item_status }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button class="btn btn-sm btn-outline-brand" type="submit">改</button>
+                            </form>
+                            <form method="post" action="{{ url_for('market.delete_item', item_id=item.id) }}"
+                                  data-confirm="删除后无法恢复，确定删除「{{ item.title }}」吗？">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button class="btn btn-sm btn-outline-danger" type="submit">删除</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {{ render_pagination(pagination) }}
+                {% else %}
+                    <div class="empty-state">
+                        <span class="emoji">📦</span>
+                        <p class="mb-3">这个状态下还没有商品。</p>
+                        <a class="btn btn-brand" href="{{ url_for('market.create_item') }}">发布一件</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

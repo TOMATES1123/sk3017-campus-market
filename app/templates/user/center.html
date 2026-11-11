@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}个人中心 · 校园集市{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row g-4 mt-2">
+        <div class="col-lg-3">
+            {% include "user/_menu.html" %}
+        </div>
+
+        <div class="col-lg-9">
+            <div class="panel mb-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                    <div>
+                        <h1 class="panel-title mb-1">你好，{{ current_user.username }} 👋</h1>
+                        <p class="panel-sub mb-0">
+                            {{ current_user.bio or '还没有填写签名，去账号设置里介绍一下自己吧。' }}
+                        </p>
+                    </div>
+                    <a class="btn btn-brand" href="{{ url_for('market.create_item') }}">＋ 发布新闲置</a>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-3">
+                    <div class="stat-card">
+                        <div class="label">累计发布</div>
+                        <div class="value">{{ stats.items_total }}</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-card">
+                        <div class="label">在售中</div>
+                        <div class="value text-success">{{ stats.on_sale }}</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-card">
+                        <div class="label">已售出</div>
+                        <div class="value text-secondary">{{ stats.sold }}</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-card">
+                        <div class="label">商品总浏览</div>
+                        <div class="value">{{ stats.views }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-7">
+                    <div class="panel h-100">
+                        <div class="d-flex justify-content-between align-items-baseline mb-2">
+                            <h2 class="panel-title mb-0">最近发布</h2>
+                            <a class="small" href="{{ url_for('user.my_items') }}">全部 →</a>
+                        </div>
+                        {% if recent_items %}
+                            {% for item in recent_items %}
+                            <div class="list-row">
+                                <img class="thumb"
+                                     src="{{ url_for('static', filename='uploads/items/' ~ item.cover) if item.cover else url_for('static', filename='img/placeholder.svg') }}"
+                                     alt="{{ item.title }}">
+                                <div class="flex-grow-1 min-w-0">
+                                    <a class="fw-semibold small d-block text-truncate text-reset"
+                                       href="{{ url_for('market.detail', item_id=item.id) }}">{{ item.title }}</a>
+                                    <div class="small text-muted">
+                                        ¥ {{ item.price | price }} · {{ item.views }} 次浏览 ·
+                                        {{ item.created_at | timeago }}
+                                    </div>
+                                </div>
+                                <span class="badge bg-{{ item.status | status_class }}">{{ item.status }}</span>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted small mb-0">还没有发布过商品，去发布第一件闲置吧。</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="col-md-5">
+                    <div class="panel h-100">
+                        <div class="d-flex justify-content-between align-items-baseline mb-2">
+                            <h2 class="panel-title mb-0">最新留言</h2>
+                            <a class="small" href="{{ url_for('user.my_messages') }}">全部 →</a>
+                        </div>
+                        {% if recent_messages %}
+                            {% for message in recent_messages %}
+                            <div class="py-2 border-bottom">
+                                <div class="small">
+                                    <strong>{{ message.author.username }}</strong>
+                                    在
+                                    <a href="{{ url_for('market.detail', item_id=message.item_id) }}#messages">
+                                        {{ message.item.title | truncate(12) }}
+                                    </a>
+                                    留言：
+                                </div>
+                                <div class="small text-muted">{{ message.content | truncate(46) }}</div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted small mb-0">暂时还没有收到留言。</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

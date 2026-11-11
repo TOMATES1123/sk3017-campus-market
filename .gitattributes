@@ -1,0 +1,9 @@
+# 统一换行符，避免 Windows 与 Linux 协作时整文件被标记为修改
+* text=auto
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
+*.docx binary

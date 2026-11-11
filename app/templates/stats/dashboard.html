@@ -1,0 +1,362 @@
+{% extends "base.html" %}
+
+{% block title %}数据大屏 · 校园集市{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mt-4 mb-4">
+        <div>
+            <h1 class="h3 fw-bold mb-1">平台数据看板</h1>
+            <p class="text-muted mb-0">
+                所有指标由 MySQL 聚合查询实时计算，页面打开时刷新。
+                <span id="refreshTime">刚刚</span>
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-brand" href="{{ url_for('market.index') }}">去逛市场</a>
+            <a class="btn btn-brand" href="{{ url_for('market.create_item') }}">发布闲置</a>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="kpi-card">
+                <div class="kpi-label">📦 商品总数</div>
+                <div class="kpi-value">{{ kpi.total_items }}</div>
+                <div class="kpi-note">在售 {{ kpi.on_sale }} 件 · 已售 {{ kpi.sold }} 件</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="kpi-card">
+                <div class="kpi-label">👀 累计浏览</div>
+                <div class="kpi-value">{{ kpi.views }}</div>
+                <div class="kpi-note">平均每件 {{ (kpi.views / kpi.total_items) | round(1) if kpi.total_items else 0 }} 次</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="kpi-card">
+                <div class="kpi-label">👥 注册用户</div>
+                <div class="kpi-value">{{ kpi.users }}</div>
+                <div class="kpi-note">收藏转化率 {{ kpi.favorite_rate }}%</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="kpi-card">
+                <div class="kpi-label">💰 已售商品金额</div>
+                <div class="kpi-value">¥ {{ kpi.sold_amount | round(0) | int }}</div>
+                <div class="kpi-note">平均定价 ¥ {{ kpi.avg_price | round(2) }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div class="chart-panel">
+                <div class="chart-head">
+                    <h2>分类商品占比</h2>
+                    <span class="hint">按商品数量统计</span>
+                </div>
+                <div class="chart" id="categoryChart"></div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="chart-panel">
+                <div class="chart-head">
+                    <h2>新增商品趋势</h2>
+                    <div class="d-flex gap-1">
+                        {% for option in [7, 14, 30] %}
+                        <a class="chip {{ 'active' if days == option }} py-1 px-2"
+                           href="{{ url_for('stats.dashboard', days=option) }}">{{ option }} 天</a>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="chart" id="trendChart"></div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="chart-panel">
+                <div class="chart-head">
+                    <h2>价格区间分布</h2>
+                    <span class="hint">全部商品，按定价分档</span>
+                </div>
+                <div class="chart" id="priceChart"></div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="chart-panel">
+                <div class="chart-head">
+                    <h2>商品状态构成</h2>
+                    <span class="hint">在售 / 已售 / 下架</span>
+                </div>
+                <div class="chart" id="statusChart"></div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="chart-panel">
+                <div class="chart-head">
+                    <h2>热门商品 TOP 5</h2>
+                    <span class="hint">按浏览量排序</span>
+                </div>
+                {% if hot_items %}
+                <div class="rank-list mt-2">
+                    {% for item in hot_items %}
+                    <div class="rank-item">
+                        <span class="rank-no">{{ loop.index }}</span>
+                        <a class="rank-title text-reset"
+                           href="{{ url_for('market.detail', item_id=item.id) }}">{{ item.title }}</a>
+                        <span class="rank-views">{{ item.views }} 浏览</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted small mb-0">暂无商品数据。</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="chart-panel">
+                <div class="chart-head">
+                    <h2>互动概况</h2>
+                    <span class="hint">留言与收藏</span>
+                </div>
+                <div class="d-grid gap-3 mt-3">
+                    <div>
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="text-muted">累计留言</span><strong>{{ kpi.messages }} 条</strong>
+                        </div>
+                        <div class="progress" style="height: 8px">
+                            <div class="progress-bar" style="width: {{ [kpi.messages * 8, 100] | min }}%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="text-muted">累计收藏</span>
+                            <strong>{{ kpi.favorites }} 次</strong>
+                        </div>
+                        <div class="progress" style="height: 8px">
+                            <div class="progress-bar bg-warning"
+                                 style="width: {{ [kpi.favorite_rate * 4, 100] | min }}%"></div>
+                        </div>
+                    </div>
+                    <div class="small text-muted">
+                        收藏转化率 = 收藏人次 / 商品总数，反映商品对同学的吸引力。
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/echarts.min.js') }}"></script>
+<script>
+(function () {
+    "use strict";
+
+    const PALETTE = ["#4f46e5", "#0ea5e9", "#f59e0b", "#ec4899", "#22c55e",
+                     "#a855f7", "#ef4444", "#64748b"];
+    const charts = [];
+
+    function mount(id) {
+        const element = document.getElementById(id);
+        const chart = echarts.init(element);
+        charts.push(chart);
+        return chart;
+    }
+
+    function emptyOption(text) {
+        return {
+            graphic: [{
+                type: "text",
+                left: "center",
+                top: "middle",
+                style: { text: text, fill: "#94a3b8", fontSize: 14 },
+            }],
+        };
+    }
+
+    function loadJSON(url) {
+        return fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+            .then((response) => {
+                if (!response.ok) throw new Error("HTTP " + response.status);
+                return response.json();
+            });
+    }
+
+    /* ---------- 分类占比（环形饼图） ---------- */
+    const categoryChart = mount("categoryChart");
+    categoryChart.showLoading({ text: "加载中…", color: "#4f46e5" });
+    loadJSON("{{ url_for('stats.api_category') }}")
+        .then((data) => {
+            categoryChart.hideLoading();
+            const items = (data.data || []).filter((row) => row.value > 0);
+            if (!items.length) {
+                categoryChart.setOption(emptyOption("暂无分类数据"));
+                return;
+            }
+            categoryChart.setOption({
+                color: PALETTE,
+                tooltip: {
+                    trigger: "item",
+                    formatter: (params) =>
+                        `${params.name}<br/>数量：${params.value} 件（${params.percent}%）` +
+                        `<br/>均价：¥ ${params.data.avg_price}`,
+                },
+                legend: { bottom: 0, icon: "circle", textStyle: { color: "#4b5563", fontSize: 12 } },
+                series: [{
+                    name: "商品分类",
+                    type: "pie",
+                    radius: ["42%", "68%"],
+                    center: ["50%", "44%"],
+                    avoidLabelOverlap: true,
+                    itemStyle: { borderColor: "#fff", borderWidth: 3, borderRadius: 6 },
+                    label: { show: false },
+                    emphasis: {
+                        label: { show: true, fontSize: 14, fontWeight: "bold", formatter: "{b}\n{d}%" },
+                    },
+                    data: items,
+                }],
+            });
+        })
+        .catch(() => {
+            categoryChart.hideLoading();
+            categoryChart.setOption(emptyOption("分类数据加载失败"));
+        });
+
+    /* ---------- 新增趋势（面积折线） ---------- */
+    const trendChart = mount("trendChart");
+    trendChart.showLoading({ text: "加载中…", color: "#4f46e5" });
+    loadJSON("{{ url_for('stats.api_trend', days=days) }}")
+        .then((data) => {
+            trendChart.hideLoading();
+            const values = data.values || [];
+            if (!values.length || values.every((value) => value === 0)) {
+                trendChart.setOption(emptyOption("这段时间没有新增商品"));
+                return;
+            }
+            trendChart.setOption({
+                color: ["#4f46e5"],
+                tooltip: { trigger: "axis", formatter: "{b}<br/>新增 {c} 件" },
+                grid: { left: 40, right: 18, top: 20, bottom: 28 },
+                xAxis: {
+                    type: "category",
+                    boundaryGap: false,
+                    data: data.labels,
+                    axisLine: { lineStyle: { color: "#e5e7eb" } },
+                    axisLabel: { color: "#6b7280" },
+                },
+                yAxis: {
+                    type: "value",
+                    minInterval: 1,
+                    splitLine: { lineStyle: { color: "#f1f5f9" } },
+                    axisLabel: { color: "#6b7280" },
+                },
+                series: [{
+                    name: "新增商品",
+                    type: "line",
+                    smooth: true,
+                    symbolSize: 7,
+                    lineStyle: { width: 3 },
+                    areaStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: "rgba(79, 70, 229, .28)" },
+                            { offset: 1, color: "rgba(79, 70, 229, .02)" },
+                        ]),
+                    },
+                    data: values,
+                }],
+            });
+        })
+        .catch(() => {
+            trendChart.hideLoading();
+            trendChart.setOption(emptyOption("趋势数据加载失败"));
+        });
+
+    /* ---------- 价格区间（柱状图） ---------- */
+    const priceChart = mount("priceChart");
+    priceChart.showLoading({ text: "加载中…", color: "#4f46e5" });
+    loadJSON("{{ url_for('stats.api_price') }}")
+        .then((data) => {
+            priceChart.hideLoading();
+            priceChart.setOption({
+                tooltip: {
+                    trigger: "axis",
+                    axisPointer: { type: "shadow" },
+                    formatter: (params) => {
+                        const row = params[0];
+                        const percent = data.total ? ((row.value / data.total) * 100).toFixed(1) : 0;
+                        return `${row.name}<br/>${row.value} 件（${percent}%）`;
+                    },
+                },
+                grid: { left: 44, right: 18, top: 24, bottom: 30 },
+                xAxis: {
+                    type: "category",
+                    data: data.labels,
+                    axisLine: { lineStyle: { color: "#e5e7eb" } },
+                    axisLabel: { color: "#6b7280", interval: 0, fontSize: 11 },
+                },
+                yAxis: {
+                    type: "value",
+                    minInterval: 1,
+                    splitLine: { lineStyle: { color: "#f1f5f9" } },
+                    axisLabel: { color: "#6b7280" },
+                },
+                series: [{
+                    name: "商品数",
+                    type: "bar",
+                    barMaxWidth: 42,
+                    itemStyle: {
+                        borderRadius: [8, 8, 0, 0],
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: "#818cf8" },
+                            { offset: 1, color: "#4f46e5" },
+                        ]),
+                    },
+                    data: data.values,
+                }],
+            });
+        })
+        .catch(() => {
+            priceChart.hideLoading();
+            priceChart.setOption(emptyOption("价格数据加载失败"));
+        });
+
+    /* ---------- 状态构成（环形） ---------- */
+    const statusChart = mount("statusChart");
+    loadJSON("{{ url_for('stats.api_status') }}")
+        .then((data) => {
+            const items = data.data || [];
+            if (!items.length) {
+                statusChart.setOption(emptyOption("暂无数据"));
+                return;
+            }
+            const STATUS_COLORS = { "在售": "#22c55e", "已售": "#94a3b8", "下架": "#e2e8f0" };
+            statusChart.setOption({
+                color: ["#22c55e", "#94a3b8", "#e2e8f0"],
+                tooltip: { trigger: "item", formatter: "{b}：{c} 件（{d}%）" },
+                legend: { bottom: 0, icon: "circle", textStyle: { color: "#4b5563" } },
+                series: [{
+                    type: "pie",
+                    radius: ["45%", "70%"],
+                    center: ["50%", "45%"],
+                    label: { show: false },
+                    itemStyle: { borderColor: "#fff", borderWidth: 3, borderRadius: 6 },
+                    data: items.map((row) => ({
+                        ...row,
+                        itemStyle: { color: STATUS_COLORS[row.name] || "#64748b" },
+                    })),
+                }],
+            });
+        })
+        .catch(() => statusChart.setOption(emptyOption("状态数据加载失败")));
+
+    window.addEventListener("resize", () => charts.forEach((chart) => chart.resize()));
+})();
+</script>
+{% endblock %}

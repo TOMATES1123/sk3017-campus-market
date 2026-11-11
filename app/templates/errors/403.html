@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}没有权限 · 校园集市{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="error-page">
+        <div class="error-code">403</div>
+        <h1 class="h4 mt-3">没有权限执行该操作</h1>
+        <p class="text-muted">只有商品的发布者才能编辑、改状态或删除商品。</p>
+        <a class="btn btn-brand" href="{{ url_for('market.index') }}">回到首页</a>
+    </div>
+</div>
+{% endblock %}
