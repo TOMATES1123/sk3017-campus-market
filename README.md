@@ -247,4 +247,4 @@ pytest tests/test_utils.py      # 9 项通过
 ---
 
 课程设计说明：本项目按《SK3017 课程设计选题题库》**题目二**独立完成，
-仓库链接：`https://gitee.com/你的用户名/sk3017-campus-market`（提交前请替换为自己的仓库地址）。
+仓库链接：`https://github.com/TOMATES1123/sk3017-campus-market`（公开仓库）。
